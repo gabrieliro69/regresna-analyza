@@ -78,7 +78,7 @@
 
   <section class="card">
     <h2>2. Interaktívna predikcia</h2>
-    <p class="desc">Nastavte hodnoty posuvníkmi – predikcie všetkých troch ukazovateľov sa prepočítajú okamžite (interval je 95 % interval predikcie pre nové pozorovanie, približne ±1,96·SE).</p>
+    <p class="desc">Nastavte hodnoty posuvníkmi – predikcie všetkých troch ukazovateľov sa prepočítajú okamžite. 95 % interval predikcie pre nové pozorovanie počíta stránka ako ± t-kritická hodnota (0,975; df) · SE – teda podľa skutočného počtu riadkov vzorky (df = n − 5).</p>
     <div class="grid2">
       <div id="controls"></div>
       <div id="pred-grid" class="pred-grid" style="margin-top:0;align-content:start"></div>
@@ -104,7 +104,7 @@
 
   <section class="card">
     <h2>4. Dáta (simulovaná vzorka)</h2>
-    <p class="desc">Súhrnné štatistiky a ukážka prvých 10 pozorovaní. Nová vzorka sa generuje so zmenou <i>seed</i> – model sa prepočíta automaticky. Aktuálnu vzorku možno stiahnuť ako CSV, vlastné dáta načítať z CSV (rovnaký formát ako export).</p>
+    <p class="desc">Súhrnné štatistiky a ukážka prvých riadkov (max. 10). Nová vzorka sa generuje so zmenou <i>seed</i> – model sa prepočíta automaticky. Aktuálnu vzorku možno stiahnuť ako CSV, vlastné dáta načítať z CSV (rovnaký formát ako export); všetky výpočty (vrátane df, t-kritických hodnôt a intervalov) sa prispôsobia počtu načítaných riadkov.</p>
     <div class="table-wrap"><table id="stats-table"></table></div>
     <div class="table-wrap"><table id="sample-table"></table></div>
     <div class="seed-row">
@@ -176,6 +176,15 @@ function betai(a,b,x){
 }
 function tPValue(t,df){ return betai(df/2,0.5,df/(df+t*t)); }       /* dvojstranná p-hodnota */
 function fPValue(f,d1,d2){ return betai(d2/2,d1/2,d2/(d2+d1*f)); }   /* P(F > f) */
+function tCdf(t,df){
+  const ib=betai(df/2,0.5,df/(df+t*t));
+  return t>=0?1-0.5*ib:0.5*ib;
+}
+function tCritical(p,df){ /* kladná kvantilová hodnota t-rozdelenia, napr. tCritical(0.975,df) */
+  let lo=0,hi=100;
+  for(let i=0;i<80;i++){ const mid=(lo+hi)/2; if(tCdf(mid,df)<p) lo=mid; else hi=mid; }
+  return (lo+hi)/2;
+}
 
 /* ---------------- simulácia dát ---------------- */
 function generateData(seed){
@@ -330,7 +339,8 @@ function predictRow(model,inp){
   let h=0;
   for(let a=0;a<x.length;a++){ let s=0; for(let b=0;b<x.length;b++) s+=model.XtXinv[a][b]*x[b]; h+=x[a]*s; }
   const sePred=Math.sqrt(model.sigma2*(1+h));
-  return {y, lo:y-1.96*sePred, hi:y+1.96*sePred};
+  const tc=tCritical(0.975,model.df);
+  return {y, lo:y-tc*sePred, hi:y+tc*sePred, tc};
 }
 
 /* ---------------- konfigurácia ---------------- */
@@ -501,7 +511,7 @@ function renderPredictions(){
     return '<div class="pred-card" style="--c:'+OUT_COLORS[o.key]+'">'
       +'<div class="pred-label">'+o.label+'</div>'
       +'<div class="pred-value">'+fmt(p.y,o.dp)+'<span class="unit">'+o.unit+'</span></div>'
-      +'<div class="small">95 % interval predikcie: '+fmt(p.lo,o.dp)+' – '+fmt(p.hi,o.dp)+o.unit+'</div>'
+      +'<div class="small">95 % interval predikcie (±'+fmt(p.tc,2)+'·SE, df = '+m.df+'): '+fmt(p.lo,o.dp)+' – '+fmt(p.hi,o.dp)+o.unit+'</div>'
       +'<div class="small delta">+10 bodov FG ⇒ '+(d10>=0?'+':'−')+dTxt+' (pri nezmenených kontrolných premenných)</div>'
       +'</div>';
   }).join('');
@@ -567,7 +577,7 @@ function renderDataStats(){
 function renderSample(){
   const head=['FG','Vek','Príjem (€)','Vzdelanie','Úspory (%)','Zadlženosť','Rizikové (%)'];
   let html='<thead><tr>'+head.map(h=>'<th>'+h+'</th>').join('')+'</tr></thead><tbody>';
-  for(const r of state.rows.slice(0,10)){
+  for(const r of state.rows.slice(0,Math.min(10,state.rows.length))){
     html+='<tr><td>'+r.fg+'</td><td>'+r.vek+'</td><td>'+fmt(r.prijem,0)+'</td><td>'+r.vzdelanie+'</td><td>'+fmt(r.upory,1)+'</td><td>'+fmt(r.zadlzenost,2)+'</td><td>'+fmt(r.rizikove,1)+'</td></tr>';
   }
   document.getElementById('sample-table').innerHTML=html+'</tbody>';
@@ -601,7 +611,7 @@ function init(){
         const parsed=parseCSVText(txt);
         state.rows=parsed.rows; state.source='CSV'; state.fileName=f.name; state.skipped=parsed.skipped;
         recompute();
-        setStatus('OK: načítaných '+parsed.rows.length+' riadkov z „'+f.name+'“'+(parsed.skipped?' ('+parsed.skipped+' neplatných preskočených)':'')+'.','ok');
+        setStatus('OK: načítaných '+parsed.rows.length+' riadkov z „'+f.name+'“ (n = '+parsed.rows.length+', df = '+(parsed.rows.length-5)+')'+(parsed.skipped?', preskočených neplatných: '+parsed.skipped:'')+'.','ok');
       }catch(err){ setStatus('Chyba CSV: '+err.message,'err'); }
     }).catch(err=>setStatus('Chyba pri čítaní súboru: '+err.message,'err'));
   });
