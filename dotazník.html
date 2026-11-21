@@ -154,12 +154,12 @@
       </div>
       <div class="muted-box">
         <b>Zoznam odpovedí:</b> <span id="resp-count">0</span><br>
-        <span class="small">Každá validná odpoveď sa tlačidlom „Pridať odpoveď“ uloží do zoznamu nižšie. Export CSV má presne štruktúru súboru <code>Dotazník.csv</code> (UTF-8 s BOM, oddeľovač „;“, desatinná bodka) – môžete ho načítať na stránke <a href="regresna-analyza.html">regresna-analyza.html</a> (sekcia 4 → vlastná vzorka).</span>
+        <span class="small">Každá validná odpoveď sa tlačidlom „Pridať odpoveď“ uloží do zoznamu nižšie. Export CSV má presne štruktúru súboru <code>Dotazník.csv</code> (UTF-8 s BOM, oddeľovač „;“, desatinná bodka) a názov podľa vzoru <code>Dotazník_&lt;dátum&gt;_&lt;čas&gt;.csv</code>, napr. <code>Dotazník_2026-11-21_11-20-07.csv</code> – môžete ho načítať na stránke <a href="regresna-analyza.html">regresna-analyza.html</a> (sekcia 4 → vlastná vzorka).</span>
       </div>
     </div>
     <div class="btn-row">
       <button class="btn" id="btn-add">Pridať odpoveď</button>
-      <button class="btn" id="btn-export">Exportovať CSV (Dotazník.csv)</button>
+      <button class="btn" id="btn-export">Exportovať CSV</button>
       <button class="btn secondary" id="btn-clear">Vymazať zoznam</button>
     </div>
     <div class="status" id="form-status"></div>
@@ -254,6 +254,11 @@ function validate(a){
 /* ---------------- CSV ---------------- */
 function rowToCSVLine(r){ return [r.fg,r.vek,r.prijem,r.vzdelanie,r.upory,r.zadlzenost,r.rizikove].join(';'); }
 function responsesToCSV(rows){ return '\uFEFF'+CSV_HEADER+'\n'+rows.map(rowToCSVLine).join('\n')+'\n'; }
+function timestampName(){
+  const d=new Date();
+  const p=n=>String(n).padStart(2,'0');
+  return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate())+'_'+p(d.getHours())+'-'+p(d.getMinutes())+'-'+p(d.getSeconds());
+}
 
 /* ---------------- stav ---------------- */
 let responses=[];
@@ -289,13 +294,14 @@ function setStatus(msg,type){
 }
 function downloadCSV(){
   if(!responses.length){ setStatus('Zoznam je prázdny – najprv pridajte aspoň jednu odpoveď.','err'); return; }
+  const fname='Dotazník_'+timestampName()+'.csv';
   const blob=new Blob([responsesToCSV(responses)],{type:'text/csv;charset=utf-8'});
   const a=document.createElement('a');
   a.href=URL.createObjectURL(blob);
-  a.download='Dotazník.csv';
+  a.download=fname;
   document.body.appendChild(a); a.click(); a.remove();
   setTimeout(()=>URL.revokeObjectURL(a.href),1000);
-  setStatus('Export OK: '+responses.length+' odpovedí uložených do Dotazník.csv (UTF-8, oddeľovač „;“).','ok');
+  setStatus('Export OK: '+responses.length+' odpovedí uložených do '+fname+' (UTF-8, oddeľovač „;“).','ok');
 }
 function addResponse(){
   const a=readAnswers();
