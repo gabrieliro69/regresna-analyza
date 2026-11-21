@@ -17,6 +17,8 @@
   h2{margin:0 0 10px;font-size:1.15rem;color:#312e81}
   .desc{color:#475569;margin:0 0 14px;font-size:.93rem}
   .table-wrap{overflow-x:auto;margin:12px 0}
+  .scroll-box{max-height:340px;overflow-y:auto;overflow-x:auto}
+  .scroll-box thead th{position:sticky;top:0;z-index:1}
   table{border-collapse:collapse;width:100%;font-size:.88rem}
   th,td{padding:8px 10px;border-bottom:1px solid #e2e8f0;text-align:right;white-space:nowrap}
   th:first-child,td:first-child{text-align:left}
@@ -105,9 +107,10 @@
 
   <section class="card">
     <h2>4. Dáta</h2>
-    <p class="desc">Súhrnné štatistiky a ukážka prvých riadkov (max. 10). Nová vzorka sa generuje so zmenou <i>seed</i> – model sa prepočíta automaticky. Aktuálnu vzorku možno stiahnuť ako CSV, vlastné dáta načítať z CSV (rovnaký formát ako export); všetky výpočty (vrátane df, t-kritických hodnôt a intervalov) sa prispôsobia počtu načítaných riadkov.</p>
+    <p class="desc">Súhrnné štatistiky a rolovateľná tabuľka všetkých riadkov vzorky (pri veľkom n sa zobrazí prvých 2000). Nová vzorka sa generuje so zmenou <i>seed</i> – model sa prepočíta automaticky. Aktuálnu vzorku možno stiahnuť ako CSV, vlastné dáta načítať z CSV (rovnaký formát ako export); všetky výpočty (vrátane df, t-kritických hodnôt a intervalov) sa prispôsobia počtu načítaných riadkov.</p>
     <div class="table-wrap"><table id="stats-table"></table></div>
-    <div class="table-wrap"><table id="sample-table"></table></div>
+    <div class="table-wrap scroll-box"><table id="sample-table"></table></div>
+    <div class="small" id="sample-note" style="margin-top:6px"></div>
     <div class="seed-row">
       <label class="small" for="seed" style="font-weight:600">Seed generátora:</label>
       <input type="number" id="seed" value="20240517" min="1" step="1">
@@ -578,11 +581,15 @@ function renderDataStats(){
 }
 function renderSample(){
   const head=['FG','Vek','Príjem (€)','Vzdelanie','Úspory (%)','Zadlženosť','Rizikové (%)'];
+  const MAX_SHOW=2000;
+  const shown=state.rows.slice(0,MAX_SHOW);
   let html='<thead><tr>'+head.map(h=>'<th>'+h+'</th>').join('')+'</tr></thead><tbody>';
-  for(const r of state.rows.slice(0,Math.min(10,state.rows.length))){
+  for(const r of shown){
     html+='<tr><td>'+r.fg+'</td><td>'+r.vek+'</td><td>'+fmt(r.prijem,0)+'</td><td>'+r.vzdelanie+'</td><td>'+fmt(r.upory,1)+'</td><td>'+fmt(r.zadlzenost,2)+'</td><td>'+fmt(r.rizikove,1)+'</td></tr>';
   }
   document.getElementById('sample-table').innerHTML=html+'</tbody>';
+  const note=document.getElementById('sample-note');
+  if(note) note.textContent=state.rows.length>MAX_SHOW ? 'Zobrazených prvých '+MAX_SHOW+' z '+state.rows.length+' riadkov – kompletnú vzorku stiahnete ako CSV.' : '';
 }
 
 /* ---------------- inicializácia ---------------- */
