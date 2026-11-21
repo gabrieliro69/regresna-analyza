@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Anonymný dotazník k študentskej vedeckej práci o súvislostiach medzi finančnou gramotnosťou a finančným správaním. Výpočet premenných a export do CSV (štruktúra Dotazník.csv).">
+<title>Dotazník – finančná gramotnosť a finančné správanie</title>
+<style>
+  *{box-sizing:border-box}
+  body{margin:0;font-family:"Segoe UI",system-ui,-apple-system,Arial,sans-serif;background:#f1f5f9;color:#0f172a;line-height:1.55}
+  header{background:linear-gradient(135deg,#312e81,#4f46e5 60%,#0d9488);color:#fff;padding:34px 20px 28px}
+  header .inner{max-width:900px;margin:0 auto}
+  h1{margin:0 0 8px;font-size:1.55rem;line-height:1.25}
+  .subtitle{opacity:.92;margin:0;font-size:.95rem}
+  main{max-width:900px;margin:0 auto;padding:20px 16px 8px;display:flex;flex-direction:column;gap:20px}
+  .card{background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:20px 22px;box-shadow:0 1px 3px rgba(15,23,42,.06)}
+  h2{margin:0 0 10px;font-size:1.12rem;color:#312e81}
+  .desc{color:#475569;margin:0 0 14px;font-size:.93rem}
+  .btn{background:#4f46e5;color:#fff;border:none;border-radius:8px;padding:8px 14px;font-size:.92rem;cursor:pointer;font-weight:600;display:inline-block}
+  .btn:hover{background:#4338ca}
+  .btn.secondary{background:#e2e8f0;color:#1e293b}
+  .btn.secondary:hover{background:#cbd5e1}
+  .btn:disabled{opacity:.5;cursor:not-allowed}
+  .hidden-file{display:none}
+  .field{margin-bottom:14px}
+  .field>label{display:block;font-size:.92rem;font-weight:600;color:#334155;margin-bottom:4px}
+  .field .hint{font-weight:400;color:#64748b;font-size:.82rem}
+  input[type=number],input[type=text]{width:160px;padding:7px 9px;border:1px solid #cbd5e1;border-radius:8px;font-size:.92rem}
+  input[type=number].wide{width:200px}
+  .radio-row{display:flex;flex-direction:column;gap:6px;margin-top:4px}
+  .radio-row label{font-size:.92rem;font-weight:400;color:#1e293b;display:flex;gap:8px;align-items:baseline;cursor:pointer}
+  .consent{display:flex;gap:10px;align-items:flex-start;background:#eef2ff;border:1px solid #c7d2fe;border-radius:10px;padding:12px 14px;font-size:.93rem}
+  .consent input{margin-top:4px;accent-color:#4f46e5}
+  .q{border:1px solid #e2e8f0;border-radius:10px;padding:12px 14px;margin-bottom:12px;background:#fbfdff}
+  .q-text{font-size:.93rem;font-weight:600;color:#1e293b;margin-bottom:8px}
+  .opts{display:flex;flex-wrap:wrap;gap:8px 18px}
+  .opts label{font-size:.9rem;display:flex;gap:6px;align-items:baseline;cursor:pointer}
+  .opts input{accent-color:#4f46e5}
+  .table-wrap{overflow-x:auto;margin:10px 0}
+  .scroll-box{max-height:340px;overflow-y:auto;overflow-x:auto}
+  .scroll-box thead th{position:sticky;top:0;z-index:1}
+  table{border-collapse:collapse;width:100%;font-size:.86rem}
+  th,td{padding:7px 10px;border-bottom:1px solid #e2e8f0;text-align:right;white-space:nowrap}
+  th:first-child,td:first-child{text-align:left}
+  thead th{background:#f8fafc;color:#334155;font-weight:600;border-bottom:2px solid #e2e8f0}
+  tbody tr:hover{background:#f8fafc}
+  .small{font-size:.78rem;color:#64748b;font-weight:400}
+  .status{margin-top:10px;font-size:.9rem;font-weight:600}
+  .status.err{color:#b91c1c}
+  .status.ok{color:#166534}
+  .btn-row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:8px}
+  .score{font-size:1rem;font-weight:700;color:#4f46e5}
+  .grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px}
+  .muted-box{background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:12px 14px;font-size:.88rem;color:#475569}
+  footer{max-width:900px;margin:0 auto;padding:14px 16px 34px;color:#64748b;font-size:.82rem}
+  @media (max-width:560px){h1{font-size:1.25rem}.card{padding:16px}}
+</style>
+</head>
+<body>
+<header>
+  <div class="inner">
+    <h1>Dotazník: finančná gramotnosť a finančné správanie</h1>
+    <p class="subtitle">Anonymný dotazník k študentskej vedeckej práci. Vyplnenie trvá približne 10–12 minút. Údaje sa spracujú len súhrnne, účasť je dobrovoľná. Pri vedomostných otázkach (časť E) nepoužívajte internet ani kalkulačku; ak odpoveď nepoznáte, zvoľte „Neviem“. Všetky výpočty a export prebiehajú lokálne vo vašom prehliadači.</p>
+  </div>
+</header>
+<main>
+  <section class="card">
+    <label class="consent"><input type="checkbox" id="consent"><span>☐ Súhlasím s účasťou vo výskume a mám aspoň 18 rokov.</span></label>
+  </section>
+
+  <section class="card">
+    <h2>Časť A: Základné údaje</h2>
+    <div class="field">
+      <label for="a1">A1. Aký je váš vek (v dovŕšených rokoch)?</label>
+      <input type="number" id="a1" min="18" max="100" step="1" placeholder="napr. 25"> rokov
+    </div>
+    <div class="field">
+      <label for="a2">A2. Koľko rokov ste spolu absolvovali v dennom alebo externom formálnom vzdelávaní, od 1. ročníka základnej školy?</label>
+      <input type="number" id="a2" min="1" max="25" step="1" placeholder="napr. 13"> rokov
+      <span class="hint small">(Pomôcka: ZŠ = 9, SŠ s maturitou = 12–13, Bc. = 15–16, Mgr./Ing. = 17–18.)</span>
+    </div>
+    <div class="field">
+      <label>A3. Aké je vaše najvyššie dosiahnuté vzdelanie? <span class="hint">(kontrolná otázka)</span></label>
+      <div class="radio-row" id="a3-group">
+        <label><input type="radio" name="a3" value="zakladne"> základné</label>
+        <label><input type="radio" name="a3" value="stredne_bez_maturity"> stredné bez maturity</label>
+        <label><input type="radio" name="a3" value="stredne_s_maturitou"> stredné s maturitou</label>
+        <label><input type="radio" name="a3" value="vs1"> VŠ 1. stupeň</label>
+        <label><input type="radio" name="a3" value="vs2"> VŠ 2. stupeň</label>
+        <label><input type="radio" name="a3" value="vs3"> VŠ 3. stupeň</label>
+      </div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Časť B: Príjem a sporenie</h2>
+    <div class="field">
+      <label for="b1">B1. Aký je váš priemerný čistý mesačný príjem zo všetkých zdrojov (mzda, podnikanie, dôchodok, dávky, prenájom)?</label>
+      <input type="number" class="wide" id="b1" min="0" step="1" placeholder="napr. 1800"> €
+    </div>
+    <div class="field">
+      <label for="b2">B2. Koľko z tohto príjmu si v priemere mesačne odložíte (sporiaci účet, investície, III. pilier, hotovosť)?</label>
+      <input type="number" class="wide" id="b2" min="0" step="1" placeholder="napr. 150"> €
+      <span class="hint small">(Ak nesporíte, uveďte 0. Musí platiť B2 ≤ B1.)</span>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Časť C: Dlhy</h2>
+    <div class="field">
+      <label>C1. Máte v súčasnosti nejaký úver alebo pôžičku?</label>
+      <div class="radio-row">
+        <label><input type="radio" name="c1" value="ano"> áno</label>
+        <label><input type="radio" name="c1" value="nie"> nie (→ časť C2 preskočte, zadlženosť = 0)</label>
+      </div>
+    </div>
+    <div class="field" id="c2-block">
+      <label>C2. Uveďte približný nesplatený zostatok podľa typu dlhu (€):</label>
+      <div class="grid2">
+        <div><span class="small">Hypotéka / úver na bývanie</span><br><input type="number" id="c2h" min="0" step="1" placeholder="0"></div>
+        <div><span class="small">Spotrebný úver, lízing</span><br><input type="number" id="c2s" min="0" step="1" placeholder="0"></div>
+        <div><span class="small">Kreditná karta, povolené prečerpanie</span><br><input type="number" id="c2k" min="0" step="1" placeholder="0"></div>
+        <div><span class="small">Iné (pôžičky od rodiny, nebankové)</span><br><input type="number" id="c2i" min="0" step="1" placeholder="0"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Časť D: Finančné aktíva</h2>
+    <div class="field">
+      <label for="d1">D1. Aká je približná celková hodnota vašich finančných aktív (účty, vklady, investície, dôchodkové sporenie, kryptomeny; bez nehnuteľností)?</label>
+      <input type="number" class="wide" id="d1" min="0" step="1" placeholder="napr. 5000"> €
+    </div>
+    <div class="field">
+      <label for="d2">D2. Akú časť z nich tvoria rizikové aktíva, teda akcie, akciové a zmiešané fondy, ETF, kryptomeny a komodity?</label>
+      <input type="number" id="d2" min="0" max="100" step="0.1" placeholder="napr. 30"> %
+      <span class="hint small">(Ak žiadne nevlastníte, uveďte 0.)</span>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Časť E: Test finančnej gramotnosti</h2>
+    <p class="desc">Každá otázka má jednu správnu odpoveď. Pri každej otázke môžete zvoliť aj „Neviem“ (hodnotí sa ako 0 bodov). Skóre = počet správnych odpovedí × 5 (rozsah 0–100).</p>
+    <div id="questions"></div>
+  </section>
+
+  <section class="card">
+    <h2>Výsledok – kódovanie do premenných súboru</h2>
+    <p class="desc">Hodnoty sa počítajú priebežne: <b>financna_gramotnost_bod</b> = správne odpovede × 5; <b>miera_upspor_pct</b> = B2 / B1 × 100; <b>zadlzenost_dlh_na_rocny_prijem</b> = súčet C2 / (12 × B1), bez dlhu = 0; ostatné premenné priamo z odpovedí.</p>
+    <div class="grid2">
+      <div>
+        <div class="score" id="score">Skóre: – / 20</div>
+        <div class="table-wrap"><table id="vysledok-table"></table></div>
+      </div>
+      <div class="muted-box">
+        <b>Zoznam odpovedí:</b> <span id="resp-count">0</span><br>
+        <span class="small">Každá validná odpoveď sa tlačidlom „Pridať odpoveď“ uloží do zoznamu nižšie. Export CSV má presne štruktúru súboru <code>Dotazník.csv</code> (UTF-8 s BOM, oddeľovač „;“, desatinná bodka) – môžete ho načítať na stránke <a href="regresna-analyza.html">regresna-analyza.html</a> (sekcia 4 → vlastná vzorka).</span>
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="btn" id="btn-add">Pridať odpoveď</button>
+      <button class="btn" id="btn-export">Exportovať CSV (Dotazník.csv)</button>
+      <button class="btn secondary" id="btn-clear">Vymazať zoznam</button>
+    </div>
+    <div class="status" id="form-status"></div>
+    <div class="table-wrap scroll-box" style="margin-top:12px"><table id="resp-table"></table></div>
+  </section>
+</main>
+<footer>Anonymný dotazník – žiadne údaje neopúšťajú prehliadač (všetko lokálne). Exportovaný CSV zodpovedá štruktúre <code>Dotazník.csv</code>.</footer>
+
+<script>
+'use strict';
+/* ---------------- test E: otázky a správne odpovede ---------------- */
+/* Správne odpovede sú v DOCX označené ✔ – pre respondenta ich nezobrazujeme. */
+const QUESTIONS=[
+ {q:'Na účte máte 100 € s úrokom 2 % ročne. Koľko budete mať po 5 rokoch, ak nič nevyberiete?',opts:['viac ako 102 €','presne 102 €','menej ako 102 €']},
+ {q:'Úrok na účte je 1 % ročne, inflácia 2 % ročne. Po roku si za peniaze z účtu kúpite:',opts:['viac','rovnako','menej']},
+ {q:'„Kúpa akcií jednej firmy je zvyčajne bezpečnejšia ako kúpa akciového fondu.“',opts:['pravda','nepravda']},
+ {q:'Vložíte 1 000 € pri úroku 10 % ročne s pripisovaním úrokov. Po 2 rokoch máte:',opts:['1 100 €','1 200 €','1 210 €']},
+ {q:'Ak úrokové sadzby na trhu vzrastú, ceny už vydaných dlhopisov zvyčajne:',opts:['vzrastú','klesnú','nezmenia sa']},
+ {q:'„Hypotéka na 15 rokov má oproti 30-ročnej vyššie splátky, ale nižšie celkové zaplatené úroky.“',opts:['pravda','nepravda']},
+ {q:'RPMN vyjadruje:',opts:['úrokovú sadzbu bez poplatkov','celkové ročné náklady úveru vrátane poplatkov','výšku mesačnej splátky']},
+ {q:'Investícia s vyšším očakávaným výnosom má spravidla:',opts:['nižšie riziko','vyššie riziko','rovnaké riziko']},
+ {q:'Vklady v bankách na Slovensku sú chránené do výšky:',opts:['20 000 €','50 000 €','100 000 €']},
+ {q:'Váš príjem sa zdvojnásobí a zdvojnásobia sa aj všetky ceny. Kúpite si:',opts:['viac','rovnako','menej']},
+ {q:'Ktoré aktívum má zvyčajne najväčšie výkyvy hodnoty?',opts:['termínovaný vklad','štátne dlhopisy','akcie']},
+ {q:'Dlh 1 000 € na kreditnej karte s úrokom 20 % ročne nesplácate. Za ako dlho sa zdvojnásobí?',opts:['menej ako 5 rokov','5–10 rokov','viac ako 10 rokov']},
+ {q:'Fixácia úrokovej sadzby pri hypotéke znamená:',opts:['obdobie, počas ktorého sa sadzba nemení','celkovú dobu splácania','zákaz predčasného splatenia']},
+ {q:'Podielový fond alebo ETF je:',opts:['vklad s garantovaným výnosom','spoločné investovanie peňazí mnohých investorov do viacerých aktív','druh poistenia']},
+ {q:'Čo má väčšiu hodnotu?',opts:['1 000 € dnes','1 000 € o 3 roky','rovnakú hodnotu']},
+ {q:'Odporúčaná finančná rezerva je približne:',opts:['1 týždeň výdavkov','3–6 mesiacov výdavkov','5 rokov výdavkov']},
+ {q:'III. dôchodkový pilier je:',opts:['povinné poistenie v Sociálnej poisťovni','starobné sporenie v DSS','dobrovoľné doplnkové dôchodkové sporenie']},
+ {q:'Tovar za 250 € je zľavnený o 20 %. Zaplatíte:',opts:['200 €','230 €','225 €']},
+ {q:'Ktoré aktívum prinieslo historicky najvyšší priemerný výnos na horizonte 20 a viac rokov?',opts:['bežný účet','dlhopisy','akcie']},
+ {q:'Vklad má úrok 3 % ročne a z úrokov sa platí 19 % daň. Čistý výnos je približne:',opts:['3 %','2,4 %','1,9 %']}
+];
+const ANSWERS=[0,2,1,2,1,0,1,1,2,1,2,0,0,1,0,1,2,0,2,1]; /* index správnej možnosti; „Neviem“ = -1 */
+
+/* ---------------- pomocné ---------------- */
+const CSV_HEADER='financna_gramotnost_bod;vek_roky;prijem_eur;vzdelanie_roky;miera_upspor_pct;zadlzenost_dlh_na_rocny_prijem;podiel_rizikovych_aktiv_pct';
+const ROWS_LABELS=['financna_gramotnost_bod','vek_roky','prijem_eur','vzdelanie_roky','miera_upspor_pct','zadlzenost_dlh_na_rocny_prijem','podiel_rizikovych_aktiv_pct'];
+const round1=v=>Math.round(v*10)/10;
+const round2=v=>Math.round(v*100)/100;
+const clamp=(v,a,b)=>Math.min(b,Math.max(a,v));
+function fmt(x,dp=2){ if(x===null||x===undefined||!isFinite(x)) return '–'; return Number(x).toLocaleString('sk-SK',{minimumFractionDigits:dp,maximumFractionDigits:dp}); }
+function num(id){ const el=document.getElementById(id); if(!el) return null; const v=parseFloat(el.value); return isNaN(v)?null:v; }
+function radioVal(name){ const el=document.querySelector('input[name="'+name+'"]:checked'); return el?el.value:null; }
+
+/* ---------------- čítanie formulára ---------------- */
+function readAnswers(){
+  return {
+    consent: document.getElementById('consent').checked,
+    vek: num('a1'),
+    vzdelanie: num('a2'),
+    stupen: radioVal('a3'),
+    prijem: num('b1'),
+    odlozene: num('b2'),
+    ma_dlh: radioVal('c1'),
+    dlhy: [num('c2h'),num('c2s'),num('c2k'),num('c2i')].map(v=>v===null?0:v),
+    aktiva: num('d1'),
+    rizikove_pct: num('d2'),
+    odpovede: QUESTIONS.map((q,i)=>{ const v=radioVal('q'+i); return v===null?null:parseInt(v,10); })
+  };
+}
+
+/* ---------------- výpočet riadku (kódovanie podľa DOCX) ---------------- */
+function computeRow(a){
+  const spravne=a.odpovede.reduce((s,v,i)=>s+(v!==null&&v===ANSWERS[i]?1:0),0);
+  const fg=spravne*5;
+  const upory=a.prijem>0?round1(clamp(a.odlozene/a.prijem*100,0,100)):0;
+  const dlhSum=a.ma_dlh==='ano'?a.dlhy.reduce((s,v)=>s+Math.max(0,v||0),0):0;
+  const zadl=a.prijem>0?round2(dlhSum/(12*a.prijem)):0;
+  return {fg, vek:Math.round(a.vek||0), prijem:Math.round(a.prijem||0), vzdelanie:Math.round(a.vzdelanie||0), upory, zadlzenost:zadl, rizikove:round1(a.rizikove_pct||0), spravne};
+}
+
+/* ---------------- validácia (kontroly podľa DOCX) ---------------- */
+function validate(a){
+  const err=[];
+  if(!a.consent) err.push('Označte súhlas s účasťou vo výskume.');
+  if(a.vek===null||a.vek<18||a.vek>100) err.push('A1: vek musí byť v rozsahu 18–100 rokov.');
+  if(a.vzdelanie===null||a.vzdelanie<1||a.vzdelanie>25) err.push('A2: počet rokov vzdelania musí byť 1–25.');
+  if(a.stupen===null) err.push('A3: vyberte najvyššie dosiahnuté vzdelanie.');
+  if(a.prijem===null||a.prijem<=0) err.push('B1: priemerný čistý mesačný príjem musí byť kladné číslo.');
+  if(a.odlozene===null||a.odlozene<0) err.push('B2: odložená suma musí byť ≥ 0.');
+  else if(a.prijem!==null&&a.odlozene>a.prijem) err.push('B2: nemôžete odložiť viac, ako je príjem (B2 ≤ B1).');
+  if(a.ma_dlh===null) err.push('C1: vyberte „áno“ alebo „nie“.');
+  else if(a.ma_dlh==='ano'&&a.dlhy.some(v=>v<0)) err.push('C2: zostatky dlhov musia byť ≥ 0.');
+  if(a.aktiva===null||a.aktiva<0) err.push('D1: celková hodnota finančných aktív musí byť ≥ 0.');
+  if(a.rizikove_pct===null||a.rizikove_pct<0||a.rizikove_pct>100) err.push('D2: podiel rizikových aktív musí byť v rozsahu 0–100 %.');
+  if(a.odpovede.some(v=>v===null)) err.push('Časť E: odpovedzte na všetky otázky (alebo zvoľte „Neviem“).');
+  return err;
+}
+
+/* ---------------- CSV ---------------- */
+function rowToCSVLine(r){ return [r.fg,r.vek,r.prijem,r.vzdelanie,r.upory,r.zadlzenost,r.rizikove].join(';'); }
+function responsesToCSV(rows){ return '\uFEFF'+CSV_HEADER+'\n'+rows.map(rowToCSVLine).join('\n')+'\n'; }
+
+/* ---------------- stav ---------------- */
+let responses=[];
+
+/* ---------------- render ---------------- */
+function renderQuestions(){
+  document.getElementById('questions').innerHTML=QUESTIONS.map((q,i)=>
+    '<div class="q"><div class="q-text">E'+(i+1)+'. '+q.q+'</div><div class="opts">'
+    +q.opts.map((o,j)=>'<label><input type="radio" name="q'+i+'" value="'+j+'"> '+String.fromCharCode(97+j)+') '+o+'</label>').join('')
+    +'<label><input type="radio" name="q'+i+'" value="-1"> Neviem</label>'
+    +'</div></div>').join('');
+}
+function renderResult(){
+  const a=readAnswers();
+  const spravne=a.odpovede.reduce((s,v,i)=>s+(v!==null&&v===ANSWERS[i]?1:0),0);
+  document.getElementById('score').textContent='Skóre: '+spravne+' / '+QUESTIONS.length+' správnych → '+(spravne*5)+' bodov (0–100)';
+  const r=computeRow(a);
+  document.getElementById('vysledok-table').innerHTML='<thead><tr><th>Premenná v súbore</th><th>Hodnota</th></tr></thead><tbody>'
+    +ROWS_LABELS.map((l,i)=>{ const vals=[r.fg,r.vek,r.prijem,r.vzdelanie,r.upory,r.zadlzenost,r.rizikove]; const dp=[0,0,0,0,1,2,1][i]; return '<tr><td>'+l+'</td><td>'+fmt(vals[i],dp)+'</td></tr>'; }).join('')+'</tbody>';
+}
+function renderResponses(){
+  document.getElementById('resp-count').textContent=responses.length;
+  let html='<thead><tr><th>#</th>'+ROWS_LABELS.map(l=>'<th>'+l+'</th>').join('')+'</tr></thead><tbody>';
+  responses.forEach((r,i)=>{
+    html+='<tr><td>'+(i+1)+'</td><td>'+r.fg+'</td><td>'+r.vek+'</td><td>'+r.prijem+'</td><td>'+r.vzdelanie+'</td><td>'+fmt(r.upory,1)+'</td><td>'+fmt(r.zadlzenost,2)+'</td><td>'+fmt(r.rizikove,1)+'</td></tr>';
+  });
+  document.getElementById('resp-table').innerHTML=html+'</tbody>';
+}
+function setStatus(msg,type){
+  const el=document.getElementById('form-status');
+  el.textContent=msg;
+  el.className='status'+(type?' '+type:'');
+}
+function downloadCSV(){
+  if(!responses.length){ setStatus('Zoznam je prázdny – najprv pridajte aspoň jednu odpoveď.','err'); return; }
+  const blob=new Blob([responsesToCSV(responses)],{type:'text/csv;charset=utf-8'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='Dotazník.csv';
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+  setStatus('Export OK: '+responses.length+' odpovedí uložených do Dotazník.csv (UTF-8, oddeľovač „;“).','ok');
+}
+function addResponse(){
+  const a=readAnswers();
+  const err=validate(a);
+  if(err.length){ setStatus('Chyby vo formulári: '+err.join(' '),'err'); return; }
+  const r=computeRow(a);
+  responses.push(r);
+  renderResponses(); renderResult();
+  setStatus('Odpoveď č. '+responses.length+' pridaná (skóre '+r.spravne+'/20 → '+r.fg+' bodov). Formulár vyčistený pre ďalšieho respondenta.','ok');
+  resetForm();
+}
+function resetForm(){
+  document.getElementById('consent').checked=false;
+  ['a1','a2','b1','b2','c2h','c2s','c2k','c2i','d1','d2'].forEach(id=>{ document.getElementById(id).value=''; });
+  document.querySelectorAll('input[type=radio]').forEach(r=>{ r.checked=false; });
+  updateC2State();
+}
+function updateC2State(){
+  const hasDebt=radioVal('c1')==='ano';
+  ['c2h','c2s','c2k','c2i'].forEach(id=>{ document.getElementById(id).disabled=!hasDebt; });
+}
+
+function init(){
+  renderQuestions();
+  renderResult();
+  renderResponses();
+  document.querySelectorAll('input').forEach(el=>{
+    el.addEventListener('input',()=>{ updateC2State(); renderResult(); });
+    el.addEventListener('change',()=>{ updateC2State(); renderResult(); });
+  });
+  document.getElementById('btn-add').addEventListener('click',addResponse);
+  document.getElementById('btn-export').addEventListener('click',downloadCSV);
+  document.getElementById('btn-clear').addEventListener('click',()=>{ responses=[]; renderResponses(); setStatus('Zoznam odpovedí vymazaný.',''); });
+  updateC2State();
+}
+if(typeof document!=='undefined') init();
+</script>
+</body>
+</html>
