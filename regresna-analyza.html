@@ -77,6 +77,7 @@
     <div class="table-wrap"><table id="coef-table"></table></div>
     <div class="table-wrap"><table id="fit-table"></table></div>
     <div class="interp" id="interp"></div>
+    <div style="margin-top:12px"><button class="btn" id="export-xml">Export výsledkov do XML</button></div>
   </section>
 
   <section class="card">
@@ -268,6 +269,48 @@ function parseCSVText(text){
   }
   if(rows.length<30) throw new Error('príliš málo platných riadkov (min. 30): '+rows.length);
   return {rows,skipped};
+}
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&apos;'); }
+function num(x,dp){ return Number(x).toFixed(dp); }
+function resultsToXML(){
+  const m=state.models;
+  const varNames=['konstanta','financna_gramotnost_FG','vek','prijem_tis_EUR','vzdelanie'];
+  let x='<?xml version="1.0" encoding="UTF-8"?>\n<regresna_analyza>\n';
+  x+='  <meta>\n    <vygenerovane>'+new Date().toISOString()+'</vygenerovane>\n';
+  x+= state.source==='CSV'
+    ? '    <zdroj typ="csv" nazov="'+esc(state.fileName)+'"/>\n'
+    : '    <zdroj typ="simulacia" seed="'+state.seed+'"/>\n';
+  x+='    <n>'+m.upory.n+'</n>\n    <df>'+m.upory.df+'</df>\n  </meta>\n';
+  x+='  <vif fg="'+num(state.vif.fg,3)+'" vek="'+num(state.vif.vek,3)+'" prijem_tis_EUR="'+num(state.vif.prijem_k,3)+'" vzdelanie="'+num(state.vif.vzdelanie,3)+'"/>\n';
+  x+='  <modely>\n';
+  for(const o of OUTCOMES){
+    const mm=m[o.key];
+    x+='    <model id="'+o.key+'" nazov="'+esc(o.label)+'">\n      <koeficienty>\n';
+    for(let i=0;i<5;i++){
+      x+='        <koeficient premenna="'+varNames[i]+'" beta="'+num(mm.beta[i],6)+'" se="'+num(mm.se[i],6)+'" t="'+num(mm.t[i],4)+'" p="'+mm.p[i]+'" signifikacia="'+stars(mm.p[i])+'"/>\n';
+    }
+    x+='      </koeficienty>\n';
+    x+='      <fit r2="'+num(mm.r2,6)+'" adjR2="'+num(mm.adj,6)+'" F="'+num(mm.f,4)+'" pF="'+mm.fP+'" sigma="'+num(Math.sqrt(mm.sigma2),6)+'" n="'+mm.n+'" df="'+mm.df+'"/>\n';
+    x+='    </model>\n';
+  }
+  x+='  </modely>\n  <predikcie>\n';
+  const inp=state.inputs;
+  x+='    <vstupy fg="'+inp.fg+'" vek="'+inp.vek+'" prijem_eur="'+inp.prijem+'" vzdelanie="'+inp.vzdelanie+'"/>\n';
+  for(const o of OUTCOMES){
+    const p=predictRow(m[o.key],inp);
+    x+='    <predikcia model="'+o.key+'" hodnota="'+num(p.y,6)+'" interval_dolny="'+num(p.lo,6)+'" interval_horny="'+num(p.hi,6)+'" tcrit="'+num(p.tc,4)+'" delta_10_FG="'+num(m[o.key].beta[1]*10,6)+'"/>\n';
+  }
+  x+='  </predikcie>\n</regresna_analyza>\n';
+  return x;
+}
+function downloadXML(){
+  const blob=new Blob([resultsToXML()],{type:'application/xml;charset=utf-8'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  const tag=state.source==='CSV'?'upload':'seed'+state.seed;
+  a.download='vysledky_regresna_analyza_'+tag+'_n'+state.rows.length+'.xml';
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(a.href),1000);
 }
 function setStatus(msg,type){
   const el=document.getElementById('upload-status');
@@ -612,6 +655,7 @@ function init(){
     recompute();
   });
   document.getElementById('download-csv').addEventListener('click',downloadCSV);
+  document.getElementById('export-xml').addEventListener('click',downloadXML);
   document.getElementById('csv-upload').addEventListener('change',e=>{
     const f=e.target.files&&e.target.files[0];
     if(!f) return;
