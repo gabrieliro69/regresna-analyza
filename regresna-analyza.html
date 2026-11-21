@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Interaktívna regresná analýza vplyvu finančnej gramotnosti na mieru úspor, zadlženosť a držbu rizikových aktív s kontrolnými premennými vek, príjem a vzdelanie.">
+<title>Regresná analýza – finančná gramotnosť a finančné správanie domácností</title>
+<style>
+  *{box-sizing:border-box}
+  body{margin:0;font-family:"Segoe UI",system-ui,-apple-system,Arial,sans-serif;background:#f1f5f9;color:#0f172a;line-height:1.55}
+  header{background:linear-gradient(135deg,#312e81,#4f46e5 60%,#0d9488);color:#fff;padding:38px 20px 32px}
+  header .inner{max-width:1100px;margin:0 auto}
+  h1{margin:0 0 8px;font-size:1.65rem;line-height:1.25}
+  .subtitle{opacity:.92;max-width:62rem;margin:0;font-size:.98rem}
+  main{max-width:1100px;margin:0 auto;padding:20px 16px 8px;display:flex;flex-direction:column;gap:20px}
+  .card{background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:20px 22px;box-shadow:0 1px 3px rgba(15,23,42,.06)}
+  h2{margin:0 0 10px;font-size:1.15rem;color:#312e81}
+  .desc{color:#475569;margin:0 0 14px;font-size:.93rem}
+  .warn{background:#fffbeb;border:1px solid #fde68a;color:#92400e;border-radius:12px;padding:12px 16px;font-size:.92rem}
+  .table-wrap{overflow-x:auto;margin:12px 0}
+  table{border-collapse:collapse;width:100%;font-size:.88rem}
+  th,td{padding:8px 10px;border-bottom:1px solid #e2e8f0;text-align:right;white-space:nowrap}
+  th:first-child,td:first-child{text-align:left}
+  thead th{background:#f8fafc;color:#334155;font-weight:600;border-bottom:2px solid #e2e8f0}
+  tbody tr:hover{background:#f8fafc}
+  tbody tr.hl{background:#eef2ff}
+  .small{font-size:.76rem;color:#64748b;font-weight:400}
+  .star{color:#b45309;font-weight:700}
+  .eq{font-family:"Cascadia Code",Consolas,Menlo,monospace;font-size:.88rem;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:8px 12px;margin-bottom:6px;overflow-x:auto;white-space:nowrap}
+  .grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(330px,1fr));gap:18px}
+  .ctl{margin-bottom:14px}
+  .ctl label{display:flex;justify-content:space-between;gap:8px;font-size:.92rem;font-weight:600;color:#334155;margin-bottom:4px}
+  .ctl .val{color:#4f46e5;font-variant-numeric:tabular-nums}
+  .ctl-row{display:flex;gap:10px;align-items:center}
+  input[type=range]{flex:1;accent-color:#4f46e5;min-width:120px}
+  input[type=number]{width:92px;padding:6px 8px;border:1px solid #cbd5e1;border-radius:8px;font-size:.9rem}
+  select{padding:7px 10px;border:1px solid #cbd5e1;border-radius:8px;font-size:.92rem;background:#fff}
+  button.btn{background:#4f46e5;color:#fff;border:none;border-radius:8px;padding:8px 14px;font-size:.92rem;cursor:pointer;font-weight:600}
+  button.btn:hover{background:#4338ca}
+  .pills{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 12px}
+  .pill{border:2px solid var(--c,#4f46e5);background:#fff;color:var(--c,#4f46e5);border-radius:999px;padding:6px 14px;font-size:.88rem;cursor:pointer;font-weight:600}
+  .pill.active{background:var(--c,#4f46e5);color:#fff}
+  .pred-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:14px;margin-top:16px}
+  .pred-card{border:1px solid #e2e8f0;border-left:5px solid var(--c);border-radius:10px;padding:12px 14px;background:#fbfdff}
+  .pred-label{font-size:.85rem;font-weight:600;color:#475569}
+  .pred-value{font-size:1.55rem;font-weight:700;color:var(--c);font-variant-numeric:tabular-nums}
+  .pred-value .unit{font-size:.95rem;font-weight:600;margin-left:4px}
+  .delta{margin-top:4px;color:#334155}
+  #chart-holder{width:100%}
+  canvas{width:100%;display:block}
+  .legend{font-size:.84rem;color:#64748b;margin-top:10px}
+  .viz-bar{display:flex;gap:14px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
+  .seed-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:12px}
+  .interp{background:#f0fdf4;border:1px solid #bbf7d0;color:#166534;border-radius:10px;padding:10px 14px;font-size:.92rem;margin-top:12px}
+  footer{max-width:1100px;margin:0 auto;padding:14px 16px 34px;color:#64748b;font-size:.82rem}
+  @media (max-width:560px){h1{font-size:1.3rem}.card{padding:16px}}
+</style>
+</head>
+<body>
+<header>
+  <div class="inner">
+    <h1>Regresná analýza: vplyv finančnej gramotnosti na úspory, zadlženosť a držbu rizikových aktív</h1>
+    <p class="subtitle">Viacnásobná lineárna regresia (OLS) s kontrolnými premennými <b>vek</b>, <b>príjem</b> a <b>vzdelanie</b>. Interaktívna stránka – všetky výpočty prebiehajú lokálne vo vašom prehliadači.</p>
+  </div>
+</header>
+<main>
+  <div class="warn">⚠ <b>Simulované dáta.</b> Vzorka 400 domácností je synteticky generovaná podľa predpokladaných vzťahov. Stránka slúži na demonštráciu a výučbu metodiky regresnej analýzy, nie na reálne ekonomické závery.</div>
+
+  <section class="card">
+    <h2>1. Regresný model (metóda najmenších štvorcov)</h2>
+    <p class="desc">Pre každú závislú premennú sa odhaduje samostatný model:
+      <i>y = β₀ + β₁·FG + β₂·vek + β₃·príjem + β₄·vzdelanie + ε</i>, kde FG je skóre finančnej gramotnosti (0–100 bodov) a príjem je v tis. €.
+      Vek, príjem a vzdelanie vstupujú ako <b>kontrolné premenné</b> – efekt FG sa tak očisťuje od ich vplyvu.
+      V tabuľke: koeficient β (štandardná chyba), t-štatistika a p-hodnota. Hviezdičky: *** p&lt;0,001, ** p&lt;0,01, * p&lt;0,05.</p>
+    <div id="equations"></div>
+    <div class="table-wrap"><table id="coef-table"></table></div>
+    <div class="table-wrap"><table id="fit-table"></table></div>
+    <div class="interp" id="interp"></div>
+  </section>
+
+  <section class="card">
+    <h2>2. Interaktívna predikcia</h2>
+    <p class="desc">Nastavte hodnoty posuvníkmi – predikcie všetkých troch ukazovateľov sa prepočítajú okamžite (interval je 95 % interval predikcie pre nové pozorovanie, približne ±1,96·SE).</p>
+    <div class="grid2">
+      <div id="controls"></div>
+      <div id="pred-grid" class="pred-grid" style="margin-top:0;align-content:start"></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>3. Vizualizácia</h2>
+    <div class="viz-bar">
+      <span class="small" style="font-weight:600">Ukazovateľ:</span>
+      <div class="pills" id="outcome-pills"></div>
+      <label class="small" for="view" style="font-weight:600">Pohľad:
+        <select id="view">
+          <option value="fg">Závislosť od finančnej gramotnosti</option>
+          <option value="fit">Predikované vs. skutočné hodnoty</option>
+          <option value="resid">Reziduály</option>
+        </select>
+      </label>
+    </div>
+    <div id="chart-holder"><canvas id="chart" height="380"></canvas></div>
+    <p class="legend" id="legend"></p>
+  </section>
+
+  <section class="card">
+    <h2>4. Dáta (simulovaná vzorka)</h2>
+    <p class="desc">Súhrnné štatistiky a ukážka prvých 10 pozorovaní. Nová vzorka sa generuje so zmenou <i>seed</i> – model sa prepočíta automaticky.</p>
+    <div class="table-wrap"><table id="stats-table"></table></div>
+    <div class="table-wrap"><table id="sample-table"></table></div>
+    <div class="seed-row">
+      <label class="small" for="seed" style="font-weight:600">Seed generátora:</label>
+      <input type="number" id="seed" value="20240517" min="1" step="1">
+      <button class="btn" id="regen">Generovať novú vzorku</button>
+    </div>
+  </section>
+</main>
+<footer>Všetky výpočty (OLS odhad, štandardné chyby, t- a F-testy, VIF, grafy) prebiehajú lokálne v JavaScripte – žiadne dáta neopúšťajú prehliadač. Metóda: obyčajné najmenšie štvorce s konštantou; p-hodnoty dvojstranné z t-rozdelenia a F-rozdelenia.</footer>
+
+<script>
+'use strict';
+/* ---------------- pomocné funkcie ---------------- */
+const clamp=(v,a,b)=>Math.min(b,Math.max(a,v));
+const round1=v=>Math.round(v*10)/10;
+const round2=v=>Math.round(v*100)/100;
+function fmt(x,dp=2){ if(x===null||x===undefined||!isFinite(x)) return '–'; return Number(x).toLocaleString('sk-SK',{minimumFractionDigits:dp,maximumFractionDigits:dp}); }
+function stars(p){ return p<0.001?'***':p<0.01?'**':p<0.05?'*':'ns'; }
+function pText(p){ return p<0.001?'< 0,001':fmt(p,3); }
+function sgn(v,dp){ return (v<0?'− ':'+ ')+fmt(Math.abs(v),dp); }
+
+function mulberry32(a){ return function(){ a|=0; a=a+0x6D2B79F5|0; let t=Math.imul(a^a>>>15,1|a); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; }
+
+function lgamma(z){
+  const c=[0.99999999999980993,676.5203681218851,-1259.1392167224028,771.32342877765313,-176.61502916214059,12.507343278686905,-0.13857109526572012,9.9843695780195716e-6,1.5056327351493116e-7];
+  if(z<0.5) return Math.log(Math.PI/Math.sin(Math.PI*z))-lgamma(1-z);
+  z-=1; let x=c[0];
+  for(let i=1;i<9;i++) x+=c[i]/(z+i);
+  const t=z+7.5;
+  return 0.5*Math.log(2*Math.PI)+(z+0.5)*Math.log(t)-t+Math.log(x);
+}
+function betacf(a,b,x){
+  const MAXIT=300, EPS=3e-14, FPMIN=1e-300;
+  const qab=a+b, qap=a+1, qam=a-1;
+  let c=1, d=1-qab*x/qap;
+  if(Math.abs(d)<FPMIN) d=FPMIN;
+  d=1/d; let h=d;
+  for(let m=1;m<=MAXIT;m++){
+    const m2=2*m;
+    let aa=m*(b-m)*x/((qam+m2)*(a+m2));
+    d=1+aa*d; if(Math.abs(d)<FPMIN) d=FPMIN;
+    c=1+aa/c; if(Math.abs(c)<FPMIN) c=FPMIN;
+    d=1/d; h*=d*c;
+    aa=-(a+m)*(qab+m)*x/((a+m2)*(qap+m2));
+    d=1+aa*d; if(Math.abs(d)<FPMIN) d=FPMIN;
+    c=1+aa/c; if(Math.abs(c)<FPMIN) c=FPMIN;
+    d=1/d; const del=d*c; h*=del;
+    if(Math.abs(del-1)<EPS) break;
+  }
+  return h;
+}
+function betai(a,b,x){
+  if(x<=0) return 0;
+  if(x>=1) return 1;
+  const bt=Math.exp(lgamma(a+b)-lgamma(a)-lgamma(b)+a*Math.log(x)+b*Math.log(1-x));
+  if(x<(a+1)/(a+b+2)) return bt*betacf(a,b,x)/a;
+  return 1-bt*betacf(b,a,1-x)/b;
+}
+function tPValue(t,df){ return betai(df/2,0.5,df/(df+t*t)); }       /* dvojstranná p-hodnota */
+function fPValue(f,d1,d2){ return betai(d2/2,d1/2,d2/(d2+d1*f)); }   /* P(F > f) */
+
+/* ---------------- simulácia dát ---------------- */
+function generateData(seed){
+  const rnd=mulberry32(seed);
+  const gauss=()=>{ let u=0; while(u===0) u=rnd(); return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*rnd()); };
+  const n=400, rows=[];
+  for(let i=0;i<n;i++){
+    const vek=Math.round(clamp(45+gauss()*16,18,80));
+    const vzdelanie=Math.round(clamp(12+0.04*(vek-40)+gauss()*2.0,8,21));
+    const prijem=Math.round(clamp(600+22*vek+95*vzdelanie+gauss()*380,350,9500));
+    const fg=Math.round(clamp(15+2.3*vzdelanie+0.25*(vek-18)+gauss()*9,0,100));
+    const pk=prijem/1000;
+    const upory=clamp(-8+0.35*fg+0.05*vek+0.35*pk+0.30*vzdelanie+gauss()*4.2,-5,60);
+    const zadlzenost=clamp(1.9-0.016*fg-0.007*vek+0.02*pk+0.018*vzdelanie+gauss()*0.28,0.02,3.5);
+    const rizikove=clamp(2+0.46*fg+0.07*vek+0.5*pk+0.7*vzdelanie+gauss()*6.5,0,95);
+    rows.push({vek,vzdelanie,prijem,prijem_k:pk,fg,upory:round1(upory),zadlzenost:round2(zadlzenost),rizikove:round1(rizikove)});
+  }
+  return rows;
+}
+
+/* ---------------- OLS ---------------- */
+function invertMatrix(A){
+  const n=A.length;
+  const M=A.map((row,i)=>row.concat(Array.from({length:n},(_,j)=>i===j?1:0)));
+  for(let col=0;col<n;col++){
+    let piv=col;
+    for(let r=col+1;r<n;r++) if(Math.abs(M[r][col])>Math.abs(M[piv][col])) piv=r;
+    if(Math.abs(M[piv][col])<1e-12) throw new Error('Singulárna matica');
+    const tmp=M[col]; M[col]=M[piv]; M[piv]=tmp;
+    const d=M[col][col];
+    for(let j=0;j<2*n;j++) M[col][j]/=d;
+    for(let r=0;r<n;r++){
+      if(r===col) continue;
+      const f=M[r][col];
+      if(f!==0) for(let j=0;j<2*n;j++) M[r][j]-=f*M[col][j];
+    }
+  }
+  return M.map(row=>row.slice(n));
+}
+function ols(X,y){
+  const n=X.length, k=X[0].length;
+  const XtX=Array.from({length:k},()=>new Array(k).fill(0));
+  const Xty=new Array(k).fill(0);
+  for(let i=0;i<n;i++){
+    for(let a=0;a<k;a++){
+      Xty[a]+=X[i][a]*y[i];
+      for(let b=0;b<k;b++) XtX[a][b]+=X[i][a]*X[i][b];
+    }
+  }
+  const inv=invertMatrix(XtX);
+  const beta=new Array(k).fill(0);
+  for(let a=0;a<k;a++) for(let b=0;b<k;b++) beta[a]+=inv[a][b]*Xty[b];
+  const fitted=new Array(n), resid=new Array(n);
+  let sse=0, ymean=0;
+  for(let i=0;i<n;i++) ymean+=y[i];
+  ymean/=n;
+  let sst=0;
+  for(let i=0;i<n;i++){
+    let f=0;
+    for(let a=0;a<k;a++) f+=beta[a]*X[i][a];
+    fitted[i]=f; resid[i]=y[i]-f; sse+=resid[i]*resid[i]; sst+=(y[i]-ymean)*(y[i]-ymean);
+  }
+  const df=n-k, sigma2=sse/df, r2=1-sse/sst, adj=1-(1-r2)*(n-1)/df;
+  const se=beta.map((b,a)=>Math.sqrt(sigma2*inv[a][a]));
+  const t=beta.map((b,a)=>b/se[a]);
+  const p=t.map((tv,a)=>tPValue(tv,df));
+  const F=(r2/(k-1))/((1-r2)/df);
+  return {beta,se,t,p,r2,adj,f:F,fP:fPValue(F,k-1,df),n,k,df,sse,sigma2,fitted,resid,XtXinv:inv};
+}
+function computeVIF(rows){
+  const cols=['fg','vek','prijem_k','vzdelanie'];
+  const vifs={};
+  for(const c of cols){
+    const others=cols.filter(x=>x!==c);
+    const X=rows.map(r=>[1,...others.map(o=>r[o])]);
+    const y=rows.map(r=>r[c]);
+    const m=ols(X,y);
+    vifs[c]=1/(1-m.r2);
+  }
+  return vifs;
+}
+function predictRow(model,inp){
+  const x=[1,inp.fg,inp.vek,inp.prijem/1000,inp.vzdelanie];
+  let y=0;
+  for(let a=0;a<x.length;a++) y+=model.beta[a]*x[a];
+  let h=0;
+  for(let a=0;a<x.length;a++){ let s=0; for(let b=0;b<x.length;b++) s+=model.XtXinv[a][b]*x[b]; h+=x[a]*s; }
+  const sePred=Math.sqrt(model.sigma2*(1+h));
+  return {y, lo:y-1.96*sePred, hi:y+1.96*sePred};
+}
+
+/* ---------------- konfigurácia ---------------- */
+const OUT_COLORS={upory:'#0d9488',zadlzenost:'#e11d48',rizikove:'#d97706'};
+const OUTCOMES=[
+  {key:'upory',label:'Miera úspor (% príjmu)',short:'úspory',unit:' %',dp:2,chartY:'Miera úspor (%)'},
+  {key:'zadlzenost',label:'Zadlženosť (dlh / ročný príjem)',short:'zadlženosť',unit:'',dp:3,chartY:'Zadlženosť (dlh/príjem)'},
+  {key:'rizikove',label:'Podiel rizikových aktív (% portfólia)',short:'rizikové aktíva',unit:' %',dp:2,chartY:'Rizikové aktíva (%)'}
+];
+const INPUTS=[
+  {key:'fg',label:'Finančná gramotnosť',unit:'bodov',min:0,max:100,step:1,def:55},
+  {key:'vek',label:'Vek',unit:'rokov',min:18,max:80,step:1,def:42},
+  {key:'prijem',label:'Mesačný príjem',unit:'€',min:350,max:9500,step:50,def:2600},
+  {key:'vzdelanie',label:'Vzdelanie (počet rokov)',unit:'rokov',min:8,max:21,step:1,def:13}
+];
+const VARS=[
+  {key:'fg',label:'Finančná gramotnosť (body)',dp:1},
+  {key:'vek',label:'Vek (roky)',dp:1},
+  {key:'prijem',label:'Mesačný príjem (€)',dp:0},
+  {key:'vzdelanie',label:'Vzdelanie (roky)',dp:1},
+  {key:'upory',label:'Miera úspor (%)',dp:1},
+  {key:'zadlzenost',label:'Zadlženosť (dlh/príjem)',dp:2},
+  {key:'rizikove',label:'Rizikové aktíva (%)',dp:1}
+];
+const state={seed:20240517,rows:[],models:{},vif:{},outcome:'upory',view:'fg',inputs:{fg:55,vek:42,prijem:2600,vzdelanie:13}};
+
+/* ---------------- graf ---------------- */
+function niceTicks(min,max,count){
+  const span=(max-min)||1, raw=span/count;
+  const mag=Math.pow(10,Math.floor(Math.log10(raw)));
+  const norm=raw/mag;
+  const step=mag*(norm<=1?1:norm<=2?2:norm<=5?5:10);
+  const ticks=[];
+  for(let v=Math.ceil(min/step)*step; v<=max+1e-9; v+=step) ticks.push(v);
+  return ticks;
+}
+const decOf=t=>{ const s=Math.abs(t); return s>=100?0:s>=10?0:s>=1?1:2; };
+function drawChart(){
+  const cv=document.getElementById('chart');
+  if(!cv) return;
+  const W=cv.parentElement.clientWidth, H=380;
+  const dpr=window.devicePixelRatio||1;
+  cv.width=W*dpr; cv.height=H*dpr; cv.style.width=W+'px'; cv.style.height=H+'px';
+  const ctx=cv.getContext('2d');
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  ctx.clearRect(0,0,W,H);
+  const mL=58,mR=18,mT=18,mB=46, pw=W-mL-mR, ph=H-mT-mB;
+  const o=OUTCOMES.find(x=>x.key===state.outcome);
+  const model=state.models[state.outcome];
+  const color=OUT_COLORS[state.outcome];
+  let xs,ys,line=null,diag=false,zero=false,sdLines=null;
+  if(state.view==='fg'){
+    xs=state.rows.map(r=>r.fg); ys=state.rows.map(r=>r[o.key]);
+    line=[];
+    for(let x=0;x<=100;x+=2) line.push([x,predictRow(model,{...state.inputs,fg:x}).y]);
+  } else if(state.view==='fit'){
+    xs=model.fitted.slice(); ys=state.rows.map(r=>r[o.key]); diag=true;
+  } else {
+    xs=model.fitted.slice(); ys=model.resid.slice(); zero=true;
+    const s=Math.sqrt(model.sigma2); sdLines=[-2*s,-s,s,2*s];
+  }
+  let xmin=Math.min.apply(null,xs), xmax=Math.max.apply(null,xs);
+  let ymin=Math.min.apply(null,ys), ymax=Math.max.apply(null,ys);
+  if(line) for(const p of line){ ymin=Math.min(ymin,p[1]); ymax=Math.max(ymax,p[1]); }
+  if(diag){ const lo=Math.min(xmin,ymin), hi=Math.max(xmax,ymax); xmin=lo; ymin=lo; xmax=hi; ymax=hi; }
+  if(zero){ const s=2.5*Math.sqrt(model.sigma2); ymin=Math.min(ymin,-s); ymax=Math.max(ymax,s); }
+  const xp=(xmax-xmin)*0.05||1, yp=(ymax-ymin)*0.08||1;
+  xmin-=xp; xmax+=xp; ymin-=yp; ymax+=yp;
+  const X=v=>mL+(v-xmin)/(xmax-xmin)*pw;
+  const Y=v=>mT+ph-(v-ymin)/(ymax-ymin)*ph;
+  ctx.font='11px system-ui,sans-serif'; ctx.lineWidth=1;
+  ctx.strokeStyle='#e2e8f0'; ctx.fillStyle='#64748b';
+  ctx.textAlign='center';
+  for(const t of niceTicks(xmin,xmax,6)){
+    ctx.beginPath(); ctx.moveTo(X(t),mT); ctx.lineTo(X(t),mT+ph); ctx.stroke();
+    ctx.fillText(fmt(t,decOf(t)),X(t),mT+ph+16);
+  }
+  ctx.textAlign='right';
+  for(const t of niceTicks(ymin,ymax,6)){
+    ctx.beginPath(); ctx.moveTo(mL,Y(t)); ctx.lineTo(mL+pw,Y(t)); ctx.stroke();
+    ctx.fillText(fmt(t,decOf(t)),mL-6,Y(t)+4);
+  }
+  ctx.strokeStyle='#94a3b8';
+  ctx.beginPath(); ctx.moveTo(mL,mT); ctx.lineTo(mL,mT+ph); ctx.lineTo(mL+pw,mT+ph); ctx.stroke();
+  if(zero){
+    ctx.strokeStyle='#f43f5e'; ctx.setLineDash([6,4]);
+    ctx.beginPath(); ctx.moveTo(mL,Y(0)); ctx.lineTo(mL+pw,Y(0)); ctx.stroke();
+    ctx.strokeStyle='#94a3b8';
+    for(const v of sdLines){
+      ctx.beginPath(); ctx.moveTo(mL,Y(v)); ctx.lineTo(mL+pw,Y(v)); ctx.stroke();
+    }
+    ctx.setLineDash([]);
+  }
+  if(diag){
+    ctx.strokeStyle='#94a3b8'; ctx.setLineDash([6,4]);
+    ctx.beginPath(); ctx.moveTo(X(xmin),Y(xmin)); ctx.lineTo(X(xmax),Y(xmax)); ctx.stroke();
+    ctx.setLineDash([]);
+  }
+  ctx.fillStyle=color+'55';
+  for(let i=0;i<xs.length;i++){ ctx.beginPath(); ctx.arc(X(xs[i]),Y(ys[i]),3,0,6.3); ctx.fill(); }
+  if(line){
+    ctx.strokeStyle=color; ctx.lineWidth=2.5;
+    ctx.beginPath();
+    line.forEach((p,i)=>{ const x=X(p[0]),y=Y(p[1]); if(i) ctx.lineTo(x,y); else ctx.moveTo(x,y); });
+    ctx.stroke();
+  }
+  ctx.fillStyle='#334155'; ctx.font='12px system-ui,sans-serif'; ctx.textAlign='center';
+  const xTitle=state.view==='fg'?'Finančná gramotnosť (body)':'Predikovaná hodnota'+(o.unit?' ('+o.unit.trim()+')':'');
+  ctx.fillText(xTitle,mL+pw/2,H-8);
+  ctx.save(); ctx.translate(14,mT+ph/2); ctx.rotate(-Math.PI/2); ctx.textAlign='center';
+  ctx.fillText(o.chartY,0,0); ctx.restore();
+}
+
+/* ---------------- render ---------------- */
+function renderEquations(){
+  document.getElementById('equations').innerHTML=OUTCOMES.map(o=>{
+    const b=state.models[o.key].beta;
+    return '<div class="eq"><b style="color:'+OUT_COLORS[o.key]+'">'+o.short+'</b> = '+fmt(b[0],2)
+      +' '+sgn(b[1],2)+'·FG '+sgn(b[2],2)+'·vek '+sgn(b[3],3)+'·príjem<sub>tis.€</sub> '+sgn(b[4],2)+'·vzdelanie + ε</div>';
+  }).join('');
+}
+function renderCoefTable(){
+  const rowsDef=[
+    {label:'Konštanta',i:0},
+    {label:'Finančná gramotnosť (FG, body)',i:1,hl:true},
+    {label:'Vek (roky)',i:2},
+    {label:'Príjem (tis. €)',i:3},
+    {label:'Vzdelanie (roky)',i:4}
+  ];
+  let html='<thead><tr><th>Premenná</th>'+OUTCOMES.map(o=>'<th style="color:'+OUT_COLORS[o.key]+'">'+o.label+'</th>').join('')+'</tr></thead><tbody>';
+  for(const r of rowsDef){
+    html+='<tr'+(r.hl?' class="hl"':'')+'><td>'+r.label+'</td>';
+    for(const o of OUTCOMES){
+      const m=state.models[o.key], i=r.i, dp=i===3?3:2;
+      html+='<td><b>'+fmt(m.beta[i],dp)+'</b> <span class="small">('+fmt(m.se[i],dp)+')</span> <span class="star">'+stars(m.p[i])+'</span>'
+        +'<br><span class="small">t = '+fmt(m.t[i],1)+', p = '+pText(m.p[i])+'</span></td>';
+    }
+    html+='</tr>';
+  }
+  html+='<tr><td>VIF (FG / vek / príjem / vzdelanie)</td>';
+  for(const o of OUTCOMES){
+    html+='<td class="small">'+fmt(state.vif.fg,1)+' / '+fmt(state.vif.vek,1)+' / '+fmt(state.vif.prijem_k,1)+' / '+fmt(state.vif.vzdelanie,1)+'</td>';
+  }
+  html+='</tr></tbody>';
+  document.getElementById('coef-table').innerHTML=html;
+  const b1=state.models.upory.beta[1], b2=state.models.zadlzenost.beta[1], b3=state.models.rizikove.beta[1];
+  const p1=state.models.upory.p[1], p2=state.models.zadlzenost.p[1], p3=state.models.rizikove.p[1];
+  const sig=(p)=>p<0.05?'štatisticky významný':'nie je štatisticky významný';
+  document.getElementById('interp').innerHTML=
+    'Pri konštantnom veku, príjme a vzdelaní je každý ďalší bod finančnej gramotnosti spojený s <b>'+fmt(b1,2)+' p. b.</b> vyššou mierou úspor ('+sig(p1)+'), '
+    +'<b>'+fmt(Math.abs(b2),3)+'</b> nižšou zadlženosťou ('+sig(p2)+') a <b>'+fmt(b3,2)+' p. b.</b> vyšším podielom rizikových aktív ('+sig(p3)+').';
+}
+function renderFitTable(){
+  const df=state.models.upory.df;
+  let html='<thead><tr><th>Model</th><th>R²</th><th>adj. R²</th><th>F(4; '+df+')</th><th>p(F)</th><th>rez. σ</th><th>n</th></tr></thead><tbody>';
+  for(const o of OUTCOMES){
+    const m=state.models[o.key];
+    html+='<tr><td><span style="color:'+OUT_COLORS[o.key]+'">●</span> '+o.short+'</td><td>'+fmt(m.r2,3)+'</td><td>'+fmt(m.adj,3)+'</td><td>'+fmt(m.f,1)+'</td><td>'+(m.fP<0.001?'&lt; 0,001':fmt(m.fP,3))+'</td><td>'+fmt(Math.sqrt(m.sigma2),3)+'</td><td>'+m.n+'</td></tr>';
+  }
+  document.getElementById('fit-table').innerHTML=html+'</tbody>';
+}
+function renderPredictions(){
+  document.getElementById('pred-grid').innerHTML=OUTCOMES.map(o=>{
+    const m=state.models[o.key];
+    const p=predictRow(m,state.inputs);
+    const d10=m.beta[1]*10;
+    const dTxt=o.unit.indexOf('%')>=0 ? fmt(d10,o.dp)+' p. b.' : fmt(d10,o.dp);
+    return '<div class="pred-card" style="--c:'+OUT_COLORS[o.key]+'">'
+      +'<div class="pred-label">'+o.label+'</div>'
+      +'<div class="pred-value">'+fmt(p.y,o.dp)+'<span class="unit">'+o.unit+'</span></div>'
+      +'<div class="small">95 % interval predikcie: '+fmt(p.lo,o.dp)+' – '+fmt(p.hi,o.dp)+o.unit+'</div>'
+      +'<div class="small delta">+10 bodov FG ⇒ '+(d10>=0?'+':'−')+dTxt+' (pri nezmenených kontrolných premenných)</div>'
+      +'</div>';
+  }).join('');
+}
+function renderControls(){
+  document.getElementById('controls').innerHTML=INPUTS.map(c=>
+    '<div class="ctl">'
+    +'<label for="rng-'+c.key+'">'+c.label+' <span class="val" id="val-'+c.key+'">'+fmt(state.inputs[c.key],0)+' '+c.unit+'</span></label>'
+    +'<div class="ctl-row">'
+    +'<input type="range" id="rng-'+c.key+'" min="'+c.min+'" max="'+c.max+'" step="'+c.step+'" value="'+state.inputs[c.key]+'">'
+    +'<input type="number" id="num-'+c.key+'" min="'+c.min+'" max="'+c.max+'" step="'+c.step+'" value="'+state.inputs[c.key]+'">'
+    +'</div></div>').join('');
+  for(const c of INPUTS){
+    const rng=document.getElementById('rng-'+c.key), num=document.getElementById('num-'+c.key), val=document.getElementById('val-'+c.key);
+    const upd=v=>{
+      v=clamp(Number(v)||c.min,c.min,c.max);
+      if(c.step>=1) v=Math.round(v/c.step)*c.step;
+      state.inputs[c.key]=v;
+      rng.value=v; num.value=v;
+      val.textContent=fmt(v,0)+' '+c.unit;
+      renderPredictions();
+      if(state.view==='fg') drawChart();
+      updateLegend();
+    };
+    rng.addEventListener('input',()=>upd(rng.value));
+    num.addEventListener('input',()=>upd(num.value));
+  }
+}
+function renderPills(){
+  document.getElementById('outcome-pills').innerHTML=OUTCOMES.map(o=>
+    '<button class="pill'+(state.outcome===o.key?' active':'')+'" style="--c:'+OUT_COLORS[o.key]+'" data-k="'+o.key+'">'+o.short+'</button>').join('');
+  document.querySelectorAll('#outcome-pills .pill').forEach(b=>b.addEventListener('click',()=>{
+    state.outcome=b.dataset.k; renderPills(); drawChart(); updateLegend();
+  }));
+}
+function updateLegend(){
+  const o=OUTCOMES.find(x=>x.key===state.outcome);
+  const t={
+    fg:'Body: skutočné pozorovania ('+o.short+' vs. finančná gramotnosť). Plná čiara: predikcia modelu pri aktuálnych kontrolných premenných (vek '+state.inputs.vek+' r., príjem '+fmt(state.inputs.prijem,0)+' €, vzdelanie '+state.inputs.vzdelanie+' r.), pričom FG sa mení od 0 do 100 bodov.',
+    fit:'Body: skutočná vs. modelom predikovaná hodnota ('+o.short+'). Prerušovaná uhlopriečka y = x znázorňuje dokonalú zhodu modelu s dátami.',
+    resid:'Reziduály (skutočnosť − predikcia) voči predikovanej hodnote ('+o.short+'). Červená čiara = 0; šedé prerušované čiary = ±1σ a ±2σ reziduálnej odchýlky.'
+  }[state.view];
+  const el=document.getElementById('legend');
+  if(el) el.textContent=t;
+}
+function statsOf(key){
+  const v=state.rows.map(r=>r[key]), n=v.length;
+  const mean=v.reduce((a,b)=>a+b,0)/n;
+  const sd=Math.sqrt(v.reduce((a,b)=>a+(b-mean)*(b-mean),0)/(n-1));
+  return {n,mean,sd,min:Math.min.apply(null,v),max:Math.max.apply(null,v)};
+}
+function renderDataStats(){
+  document.getElementById('stats-table').innerHTML='<thead><tr><th>Premenná</th><th>n</th><th>priemer</th><th>std. odch.</th><th>min</th><th>max</th></tr></thead><tbody>'
+    +VARS.map(v=>{ const s=statsOf(v.key); return '<tr><td>'+v.label+'</td><td>'+s.n+'</td><td>'+fmt(s.mean,v.dp)+'</td><td>'+fmt(s.sd,v.dp)+'</td><td>'+fmt(s.min,v.dp)+'</td><td>'+fmt(s.max,v.dp)+'</td></tr>'; }).join('')+'</tbody>';
+}
+function renderSample(){
+  const head=['FG','Vek','Príjem (€)','Vzdelanie','Úspory (%)','Zadlženosť','Rizikové (%)'];
+  let html='<thead><tr>'+head.map(h=>'<th>'+h+'</th>').join('')+'</tr></thead><tbody>';
+  for(const r of state.rows.slice(0,10)){
+    html+='<tr><td>'+r.fg+'</td><td>'+r.vek+'</td><td>'+fmt(r.prijem,0)+'</td><td>'+r.vzdelanie+'</td><td>'+fmt(r.upory,1)+'</td><td>'+fmt(r.zadlzenost,2)+'</td><td>'+fmt(r.rizikove,1)+'</td></tr>';
+  }
+  document.getElementById('sample-table').innerHTML=html+'</tbody>';
+}
+
+/* ---------------- inicializácia ---------------- */
+function recompute(){
+  const design=state.rows.map(r=>[1,r.fg,r.vek,r.prijem_k,r.vzdelanie]);
+  state.models={};
+  for(const o of OUTCOMES) state.models[o.key]=ols(design,state.rows.map(r=>r[o.key]));
+  state.vif=computeVIF(state.rows);
+  renderEquations(); renderCoefTable(); renderFitTable(); renderPredictions(); renderDataStats(); renderSample(); drawChart(); updateLegend();
+}
+function init(){
+  renderControls(); renderPills();
+  document.getElementById('view').addEventListener('change',e=>{ state.view=e.target.value; drawChart(); updateLegend(); });
+  document.getElementById('regen').addEventListener('click',()=>{
+    state.seed=Number(document.getElementById('seed').value)||1;
+    state.rows=generateData(state.seed);
+    recompute();
+  });
+  state.rows=generateData(state.seed);
+  recompute();
+  window.addEventListener('resize',drawChart);
+}
+if(typeof document!=='undefined') init();
+</script>
+</body>
+</html>
